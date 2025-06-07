@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEWS評分計算器 - 急救現場快速評估工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2ecc71',
+                        secondary: '#3498db',
+                        danger: '#e74c3c',
+                        warning: '#f39c12',
+                        dark: '#2c3e50',
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans TC', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .risk-card {
+                @apply p-5 rounded-xl shadow-lg transition-all duration-300;
+            }
+            .input-field {
+                @apply w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/30 outline-none transition-all;
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1;
+            }
+            .section-title {
+                @apply text-2xl font-bold text-dark mb-6 border-b-2 border-primary/20 pb-2;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 導航欄 -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center">
+                <i class="fa fa-heartbeat text-primary text-2xl mr-2"></i>
+                <h1 class="text-xl font-bold text-dark">MEWS評分計算器</h1>
+            </div>
+            <div class="hidden md:flex space-x-6">
+                <a href="#calculator" class="text-gray-600 hover:text-primary transition-colors">計算器</a>
+                <a href="#guide" class="text-gray-600 hover:text-primary transition-colors">評分指南</a>
+                <a href="#about" class="text-gray-600 hover:text-primary transition-colors">關於MEWS</a>
+            </div>
+            <button class="md:hidden text-gray-600">
+                <i class="fa fa-bars text-xl"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 主頁區域 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 英雄區域 -->
+        <section class="mb-12 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-8 shadow-md">
+            <div class="max-w-3xl mx-auto text-center">
+                <h2 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-dark mb-4">急救現場快速評估工具</h2>
+                <p class="text-gray-600 mb-6">MEWS (Modified Early Warning Score) 評分系統可幫助醫護人員快速評估患者病情嚴重程度，及時干預</p>
+                <a href="#calculator" class="btn-primary inline-flex items-center">
+                    <i class="fa fa-calculator mr-2"></i> 開始使用
+                </a>
+            </div>
+        </section>
+
+        <!-- 計算器區域 -->
+        <section id="calculator" class="mb-12">
+            <div class="bg-white rounded-2xl shadow-lg p-8 max-w-2xl mx-auto">
+                <h3 class="section-title">MEWS評分計算器</h3>
+                
+                <form id="mewsForm" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="hr" class="block text-gray-700 font-medium mb-2">心率（次/分）</label>
+                            <input type="number" id="hr" class="input-field" placeholder="請輸入心率" min="0" max="300">
+                        </div>
+                        <div>
+                            <label for="sbp" class="block text-gray-700 font-medium mb-2">收縮壓（mmHg）</label>
+                            <input type="number" id="sbp" class="input-field" placeholder="請輸入收縮壓" min="0" max="300">
+                        </div>
+                        <div>
+                            <label for="rr" class="block text-gray-700 font-medium mb-2">呼吸頻率（次/分）</label>
+                            <input type="number" id="rr" class="input-field" placeholder="請輸入呼吸頻率" min="0" max="60">
+                        </div>
+                        <div>
+                            <label for="temp" class="block text-gray-700 font-medium mb-2">體溫（℃）</label>
+                            <input type="number" id="temp" class="input-field" placeholder="請輸入體溫" step="0.1" min="25.0" max="45.0">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="gcs" class="block text-gray-700 font-medium mb-2">意識狀態</label>
+                            <select id="gcs" class="input-field">
+                                <option value="0">清醒（A）</option>
+                                <option value="1">對聲音有反應（V）</option>
+                                <option value="2">對疼痛有反應（P）</option>
+                                <option value="3">無反應（U）</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="calculateBtn" class="btn-primary w-full flex justify-center items-center">
+                        <i class="fa fa-calculator mr-2"></i> 計算MEWS評分
+                    </button>
+                </form>
+                
+                <div id="result" class="mt-8 p-6 rounded-xl bg-gray-50 hidden">
+                    <h4 class="text-xl font-bold mb-4">評估結果</h4>
+                    <div class="flex flex-col items-center">
+                        <div id="totalScore" class="text-[clamp(2rem,5vw,3rem)] font-bold text-dark mb-2">0</div>
+                        <div id="riskLevel" class="text-xl font-medium py-2 px-6 rounded-full"></div>
+                        <div id="recommendation" class="mt-4 text-center text-gray-600"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 評分指南 -->
+        <section id="guide" class="mb-12">
+            <div class="bg-white rounded-2xl shadow-lg p-8 max-w-4xl mx-auto">
+                <h3 class="section-title">MEWS評分指南</h3>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">指標</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">0分</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">1分</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">2分</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">3分</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap font-medium">心率（次/分）</td>
+                                <td class="px-6 py-4 whitespace-nowrap">50-100</td>
+                                <td class="px-6 py-4 whitespace-nowrap">&lt;50或101-110</td>
+                                <td class="px-6 py-4 whitespace-nowrap">111-130</td>
+                                <td class="px-6 py-4 whitespace-nowrap">&gt;130</td>
+                            </tr>
+                            <tr class="bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium">收縮壓（mmHg）</td>
+                                <td class="px-6 py-4 whitespace-nowrap">91-160</td>
+                                <td class="px-6 py-4 whitespace-nowrap">81-90或161-180</td>
+                                <td class="px-6 py-4 whitespace-nowrap">71-80或&gt;180</td>
+                                <td class="px-6 py-4 whitespace-nowrap">≤70</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap font-medium">呼吸頻率（次/分）</td>
+                                <td class="px-6 py-4 whitespace-nowrap">12-20</td>
+                                <td class="px-6 py-4 whitespace-nowrap">&lt;12或21-24</td>
+                                <td class="px-6 py-4 whitespace-nowrap">25-30</td>
+                                <td class="px-6 py-4 whitespace-nowrap">&gt;30或&lt;8</td>
+                            </tr>
+                            <tr class="bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap font-medium">體溫（℃）</td>
+                                <td class="px-6 py-4 whitespace-nowrap">36.0-38.4</td>
+                                <td class="px-6 py-4 whitespace-nowrap">35.0-35.9或38.5-38.9</td>
+                                <td class="px-6 py-4 whitespace-nowrap">39.0-40.0</td>
+                                <td class="px-6 py-4 whitespace-nowrap">&lt;35.0或&gt;40.0</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap font-medium">意識狀態</td>
+                                <td class="px-6 py-4 whitespace-nowrap">清醒（A）</td>
+                                <td class="px-6 py-4 whitespace-nowrap">對聲音有反應（V）</td>
+                                <td class="px-6 py-4 whitespace-nowrap">對疼痛有反應（P）</td>
+                                <td class="px-6 py-4 whitespace-nowrap">無反應（U）</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-8 p-6 bg-primary/10 rounded-xl">
+                    <h4 class="font-bold text-dark mb-4">風險分級與處理建議</h4>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <span class="inline-block w-3 h-3 rounded-full bg-green-500 mt-1.5 mr-2"></span>
+                            <span><strong>總分≤3分</strong>：低風險，建議常規監測</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-block w-3 h-3 rounded-full bg-yellow-500 mt-1.5 mr-2"></span>
+                            <span><strong>總分4-5分</strong>：中風險，建議加強觀察或干預</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-block w-3 h-3 rounded-full bg-red-500 mt-1.5 mr-2"></span>
+                            <span><strong>總分≥6分</strong>：高風險，建議立即啟動急救流程</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 關於MEWS -->
+        <section id="about" class="mb-12">
+            <div class="bg-white rounded-2xl shadow-lg p-8 max-w-4xl mx-auto">
+                <h3 class="section-title">關於MEWS評分</h3>
+                
+                <div class="prose max-w-none">
+                    <p class="mb-4">MEWS (Modified Early Warning Score) 是一種改良的早期警告評分系統，用於快速評估患者病情嚴重程度，預測患者臨床惡化的可能性。</p>
+                    
+                    <h4 class="text-lg font-bold mt-6 mb-3">評分目的</h4>
+                    <ul class="list-disc pl-5 mb-4">
+                        <li>早期識別病情惡化的患者</li>
+                        <li>協助臨床決策，決定是否需要加強監測或干預</li>
+                        <li>提高醫療安全，降低併發症和死亡率</li>
+                    </ul>
+                    
+                    <h4 class="text-lg font-bold mt-6 mb-3">適用場景</h4>
+                    <ul class="list-disc pl-5 mb-4">
+                        <li>急診室患者初始評估</li>
+                        <li>住院患者病情變化評估</li>
+                        <li>手術後患者恢復期監測</li>
+                        <li>院前急救現場評估</li>
+                    </ul>
+                    
+                    <h4 class="text-lg font-bold mt-6 mb-3">評分優點</h4>
+                    <ul class="list-disc pl-5">
+                        <li>簡單易用，僅需基本生命體徵數據</li>
+                        <li>快速計算，無需複雜設備</li>
+                        <li>適用於各類臨床場景</li>
+                        <li>有助於跨專業溝通和決策</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 頁腳 -->
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center">
+                        <i class="fa fa-heartbeat text-primary text-2xl mr-2"></i>
+                        <h2 class="text-xl font-bold">MEWS評分計算器</h2>
+                    </div>
+                    <p class="text-gray-400 mt-2">急救現場快速評估工具</p>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-question-circle"></i> 常見問題
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-info-circle"></i> 使用指南
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-envelope"></i> 聯繫我們
+                    </a>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400 text-sm">
+                <p>© 2025 MEWS評分計算器 - 本工具僅供醫療專業人員使用</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // MEWS評分計算邏輯
+        document.getElementById('calculateBtn').addEventListener('click', function() {
+            // 獲取輸入值
+            const hr = parseInt(document.getElementById('hr').value) || NaN;
+            const sbp = parseInt(document.getElementById('sbp').value) || NaN;
+            const rr = parseInt(document.getElementById('rr').value) || NaN;
+            const temp = parseFloat(document.getElementById('temp').value) || NaN;
+            const gcs = parseInt(document.getElementById('gcs').value);
+
+            // 計算各指標得分
+            const hrScore = getHRScore(hr);
+            const sbpScore = getSBPScore(sbp);
+            const rrScore = getRRScore(rr);
+            const tempScore = getTempScore(temp);
+            const total = hrScore + sbpScore + rrScore + tempScore + gcs;
+
+            // 顯示結果
+            document.getElementById('result').classList.remove('hidden');
+            document.getElementById('totalScore').textContent = total;
+            
+            // 根據總分設置風險等級
+            const riskLevelEl = document.getElementById('riskLevel');
+            const recommendationEl = document.getElementById('recommendation');
+            
+            if (total <= 3) {
+                riskLevelEl.textContent = '低風險';
+                riskLevelEl.className = 'text-xl font-medium py-2 px-6 rounded-full bg-green-100 text-green-800';
+                recommendationEl.textContent = '建議常規監測患者狀況。';
+            } else if (total >= 4 && total <= 5) {
+                riskLevelEl.textContent = '中風險';
+                riskLevelEl.className = 'text-xl font-medium py-2 px-6 rounded-full bg-yellow-100 text-yellow-800';
+                recommendationEl.textContent = '建議加強觀察患者，考慮進一步評估或干預。';
+            } else if (total >= 6) {
+                riskLevelEl.textContent = '高風險';
+                riskLevelEl.className = 'text-xl font-medium py-2 px-6 rounded-full bg-red-100 text-red-800';
+                recommendationEl.textContent = '建議立即啟動急救流程，通知主治醫師或重症醫學團隊。';
+            }
+
+            // 平滑滾動到結果區域
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // 評分規則函數
+        function getHRScore(hr) {
+            if (isNaN(hr)) return 0;
+            if (hr >= 50 && hr <= 100) return 0;
+            if (hr < 50 || (hr > 100 && hr <= 110)) return 1;
+            if (hr > 110 && hr <= 130) return 2;
+            return 3;
+        }
+
+        function getSBPScore(sbp) {
+            if (isNaN(sbp)) return 0;
+            if (sbp >= 91 && sbp <= 160) return 0;
+            if ((sbp >= 81 && sbp <= 90) || (sbp > 160 && sbp <= 180)) return 1;
+            if ((sbp >= 71 && sbp <= 80) || sbp > 180) return 2;
+            return 3;
+        }
+
+        function getRRScore(rr) {
+            if (isNaN(rr)) return 0;
+            if (rr >= 12 && rr <= 20) return 0;
+            if (rr < 12 || (rr > 20 && rr <= 24)) return 1;
+            if (rr > 24 && rr <= 30) return 2;
+            return 3;
+        }
+
+        function getTempScore(temp) {
+            if (isNaN(temp)) return 0;
+            if (temp >= 36.0 && temp <= 38.4) return 0;
+            if ((temp >= 35.0 && temp <= 35.9) || (temp >= 38.5 && temp <= 38.9)) return 1;
+            if (temp >= 39.0 && temp <= 40.0) return 2;
+            return 3;
+        }
+
+        // 平滑滾動到錨點
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
